@@ -11,14 +11,14 @@ class User {
 
     User(String username) {
         this.username = username;
-        this.id = 0;
+        this.id = idCount++;
         users.add(this);
     }
 
     static void showUsers() {
         System.out.println(users.size() + " users:");
         for (User user : users)
-            System.out.println(user.username);
+            System.out.println(user.id + ". " + user.username);
     }
 
     static void updateFrom(String json, boolean isServer) {
@@ -26,12 +26,13 @@ class User {
             YaGson yaGson = new YaGson();
             User user = yaGson.fromJson(json, User.class);
             for (int i = 0; i < users.size(); i++)
-                if (user.username.equals(users.get(i).username)) {
+                if (user.id == users.get(i).id) {
                     users.set(i, user);
                     return;
                 }
+
             users.add(user);
-            idCount = Math.max(idCount, user.id);
+            idCount = Math.max(idCount + 1, user.id);
             if (isServer)
                 Chat.makeChats(user);
         } catch (Exception e) {
@@ -49,7 +50,7 @@ class User {
     private List<Chat> getChats() {
         List<Chat> chats = new ArrayList<>();
         for (Chat chat : Chat.chats)
-            if (chat.users.contains(this))
+            if (chat.hasThis(this))
                 chats.add(chat);
         return chats;
     }
@@ -61,5 +62,7 @@ class User {
         return null;
     }
 
-
+    void resetID() {
+        this.id = idCount++;
+    }
 }

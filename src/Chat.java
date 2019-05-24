@@ -68,4 +68,18 @@ class Chat {
     void setID() {
         this.id = idCount++;
     }
+
+    boolean hasThis(User user) {
+        for (User u : users)
+            if (u.id == user.id)
+                return true;
+        return false;
+    }
+
+    void show() {
+        System.out.println("chat " + name + ": ");
+        for (int i = Math.max(0, messages.size() - 10); i < messages.size(); i++) {
+            System.out.println(messages.get(i));
+        }
+    }
 }

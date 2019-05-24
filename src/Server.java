@@ -29,26 +29,26 @@ class Server {
             ChatLineReader chatLineReader = new ChatLineReader(socket.getInputStream()) {
                 @Override
                 public void run() {
-                    System.out.println("server run start");
+//                    System.out.println("server run start");
                     while (scanner.hasNextLine()) {
-                        System.out.println("server run update...");
+//                        System.out.println("server run update...");
                         String json = scanner.nextLine();
                         Chat.updateFrom(json);
                         User.updateFrom(json, true);
-                        refresh();
+                        refreshAll();
                         System.out.println(Chat.chats.size() + " chats");
                         Chat.showChats();
                         System.out.println(User.users.size() + " users");
                         User.showUsers();
                     }
-                    System.out.println("server run end.");
+//                    System.out.println("server run end.");
                 }
             };
             chatLineReader.start();
         }
     }
 
-    private void refresh() {
+    private void refreshAll() {
         for (ChatLineWriter writer : writers) {
             Chat.updateTo(writer);
             User.updateTo(writer);
