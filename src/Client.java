@@ -1,34 +1,41 @@
 import com.gilecode.yagson.YaGson;
+import javafx.application.Application;
+import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Scanner;
 
-public class Client {
+public class Client extends Application {
 
-    public static void main(String[] args) throws Exception {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("enter server port: ");
-        int port = Integer.parseInt(scanner.nextLine());
-        System.out.println("enter your name: ");
-        String username = scanner.nextLine();
-        Client client = new Client(username, port);
-        client.run();
+    public static void main(String[] args) {
+        launch(args);
     }
 
-    private User user;
-    private Socket socket;
-
-    private Client(String username, int port) throws IOException {
-        this.user = new User(username);
-        this.socket = new Socket("localhost", port);
+    @Override
+    public void start(Stage primaryStage) {
+        primaryStage.setTitle("ChatRoom");
+        View.getInstance().setPrimaryStage(primaryStage);
+        View.getInstance().start();
     }
 
-    private void run() throws Exception {
+    Client(String username, int port) throws IOException {
+        User user = new User(username);
+        Socket socket = new Socket("localhost", port);
         ChatLineWriter chatLineWriter = new ChatLineWriter(socket.getOutputStream());
-        chatLineWriter.start();
+        ChatLineReader chatLineReader = new ChatLineReader(socket.getInputStream());
+        this.pack = new SocketPack(socket, chatLineWriter, chatLineReader, user);
+    }
 
-        ChatLineReader chatLineReader = new ChatLineReader(socket.getInputStream()) {
+    private ChatsMenu chatsMenu;
+    private SocketPack pack;
+
+    void run() throws Exception {
+        chatsMenu = new ChatsMenu(this);
+
+        pack.getChatLineWriter().start();
+
+        ChatLineReader chatLineReader = new ChatLineReader(pack.getSocket().getInputStream()) {
             @Override
             public void run() {
 //                System.out.println("start running");
@@ -41,13 +48,14 @@ public class Client {
 //                System.out.println("end running");
             }
         };
+        pack.setChatLineReader(chatLineReader);
         chatLineReader.start();
 
         Thread.sleep(300);
-        user.resetID();
-        User.updateTo(chatLineWriter);
+        pack.getUser().resetID();
+        User.updateTo(pack.getChatLineWriter());
 
-        while (!socket.isClosed()) {
+        while (!pack.getSocket().isClosed()) {
             System.out.println("Which chat do you want? Enter the id.");
 
             Chat.showChats();
@@ -55,13 +63,13 @@ public class Client {
 
             Scanner scanner = new Scanner(System.in);
             String chatName = scanner.nextLine();
-            Chat chat = user.getChatByID(Integer.parseInt(chatName));
+            Chat chat = pack.getUser().getChatByID(Integer.parseInt(chatName));
             if (chat == null) {
                 System.out.println("invalid chat.");
                 continue;
             }
             while (true) {
-                chat = user.getChatByID(Integer.parseInt(chatName));
+                chat = pack.getUser().getChatByID(Integer.parseInt(chatName));
                 if (chat == null) {
                     System.err.println("null");
                     break;
@@ -74,7 +82,7 @@ public class Client {
                     continue;
                 chat.addMessage(input);
                 YaGson yaGson = new YaGson();
-                chatLineWriter.writeLine(yaGson.toJson(chat));
+                pack.getChatLineWriter().writeLine(yaGson.toJson(chat));
             }
         }
     }

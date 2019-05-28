@@ -1,5 +1,13 @@
 import com.gilecode.yagson.YaGson;
+import com.gilecode.yagson.YaGsonBuilder;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +19,10 @@ class Chat {
     String name;
     List<User> users = new ArrayList<>();
     List<String> messages = new ArrayList<>();
+
+    static {
+        initializeChats();
+    }
 
     void addMessage(String message) {
         messages.add(message);
@@ -51,7 +63,7 @@ class Chat {
     }
 
     static void makeChats(User user) {
-        for (User u : User.users)
+        for (User u : User.getUsers())
             if (!u.username.equals(user.username)) {
                 Chat chat = new Chat();
                 chat.setID();
@@ -65,7 +77,7 @@ class Chat {
         users.add(user);
     }
 
-    void setID() {
+    private void setID() {
         this.id = idCount++;
     }
 
@@ -81,5 +93,50 @@ class Chat {
         for (int i = Math.max(0, messages.size() - 10); i < messages.size(); i++) {
             System.out.println(messages.get(i));
         }
+    }
+
+    void save() {
+        String path = "src/chats/";
+        path += Integer.toString(id).toLowerCase().replaceAll("\\s+", "");
+        path += ".json";
+        try (FileOutputStream fos = new FileOutputStream(path);
+             OutputStreamWriter isr = new OutputStreamWriter(fos,
+                     StandardCharsets.UTF_8)) {
+
+            YaGsonBuilder yaGsonBuilder = new YaGsonBuilder();
+            yaGsonBuilder.serializeNulls();
+
+            YaGson yaGson = yaGsonBuilder.create();
+
+            yaGson.toJson(this, isr);
+        } catch (IOException e) {
+            View.printError(e);
+        }
+    }
+
+    private static void initializeChats() {
+        File path = new File("src/chats");
+        File[] files = path.listFiles();
+        if (files == null)
+            return;
+        for (File file : files)
+            if (file.isFile())
+                chats.add(chatMaker(file.getPath()));
+    }
+
+    private static Chat chatMaker(String path) {
+        try {
+            String json = new String(Files.readAllBytes(Paths.get(path)), StandardCharsets.UTF_8);
+            YaGson yaGson = new YaGson();
+            return yaGson.fromJson(json, Chat.class);
+        } catch (IOException e) {
+            View.printError(e);
+        }
+        //  shouldn't reach here
+        return null;
+    }
+
+    static void saveAll() {
+        chats.forEach(Chat::save);
     }
 }

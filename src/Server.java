@@ -7,7 +7,7 @@ import java.util.List;
 class Server {
     private List<Socket> sockets = new ArrayList<>();
     private List<ChatLineWriter> writers = new ArrayList<>();
-    ServerSocket serverSocket;
+    private ServerSocket serverSocket;
 
     Server(int port) throws IOException {
         this.serverSocket = new ServerSocket(port);
@@ -38,7 +38,7 @@ class Server {
                         refreshAll();
                         System.out.println(Chat.chats.size() + " chats");
                         Chat.showChats();
-                        System.out.println(User.users.size() + " users");
+                        System.out.println(User.getUsers().size() + " users");
                         User.showUsers();
                     }
 //                    System.out.println("server run end.");
