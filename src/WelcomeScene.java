@@ -51,7 +51,7 @@ class WelcomeScene {
             String name = username.getText();
             try {
                 Client client = new Client(name, 2048);
-                client.run();
+                client.runn();
             } catch (Exception e) {
                 View.printError(e);
             }

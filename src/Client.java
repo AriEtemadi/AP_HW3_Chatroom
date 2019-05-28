@@ -19,6 +19,9 @@ public class Client extends Application {
         View.getInstance().start();
     }
 
+    public Client() {
+    }
+
     Client(String username, int port) throws IOException {
         User user = new User(username);
         Socket socket = new Socket("localhost", port);
@@ -30,60 +33,85 @@ public class Client extends Application {
     private ChatsMenu chatsMenu;
     private SocketPack pack;
 
-    void run() throws Exception {
+    void runn() {
+        new Thread(this::run).start();
         chatsMenu = new ChatsMenu(this);
+        chatsMenu.run();
+    }
 
-        pack.getChatLineWriter().start();
+    void run() {
+        try {
 
-        ChatLineReader chatLineReader = new ChatLineReader(pack.getSocket().getInputStream()) {
-            @Override
-            public void run() {
+            getChatLineWriter().start();
+
+            ChatLineReader chatLineReader = new ChatLineReader(getSocket().getInputStream()) {
+                @Override
+                public void run() {
 //                System.out.println("start running");
-                while (scanner.hasNextLine()) {
-                    System.out.println("run updates...");
-                    String json = scanner.nextLine();
-                    Chat.updateFrom(json);
-                    User.updateFrom(json, false);
-                }
+                    while (scanner.hasNextLine()) {
+                        System.out.println("run updates...");
+                        String json = scanner.nextLine();
+                        Chat.updateFrom(json);
+                        User.updateFrom(json, false);
+                    }
 //                System.out.println("end running");
-            }
-        };
-        pack.setChatLineReader(chatLineReader);
-        chatLineReader.start();
-
-        Thread.sleep(300);
-        pack.getUser().resetID();
-        User.updateTo(pack.getChatLineWriter());
-
-        while (!pack.getSocket().isClosed()) {
-            System.out.println("Which chat do you want? Enter the id.");
-
-            Chat.showChats();
-            User.showUsers();
-
-            Scanner scanner = new Scanner(System.in);
-            String chatName = scanner.nextLine();
-            Chat chat = pack.getUser().getChatByID(Integer.parseInt(chatName));
-            if (chat == null) {
-                System.out.println("invalid chat.");
-                continue;
-            }
-            while (true) {
-                chat = pack.getUser().getChatByID(Integer.parseInt(chatName));
-                if (chat == null) {
-                    System.err.println("null");
-                    break;
                 }
-                chat.show();
-                String input = scanner.nextLine();
-                if (input.equalsIgnoreCase("back"))
-                    break;
-                if (input.equalsIgnoreCase("show"))
+            };
+            pack.setChatLineReader(chatLineReader);
+            chatLineReader.start();
+
+            Thread.sleep(300);
+            getUser().resetID();
+            User.updateTo(getChatLineWriter());
+
+            while (!pack.getSocket().isClosed()) {
+                System.out.println("Which chat do you want? Enter the id.");
+
+                Chat.showChats();
+                User.showUsers();
+
+                Scanner scanner = new Scanner(System.in);
+                String chatName = scanner.nextLine();
+                Chat chat = getUser().getChatByID(Integer.parseInt(chatName));
+                if (chat == null) {
+                    System.out.println("invalid chat.");
                     continue;
-                chat.addMessage(input);
-                YaGson yaGson = new YaGson();
-                pack.getChatLineWriter().writeLine(yaGson.toJson(chat));
+                }
+                while (true) {
+                    chat = getUser().getChatByID(Integer.parseInt(chatName));
+                    if (chat == null) {
+                        System.err.println("null");
+                        break;
+                    }
+                    chat.show();
+                    String input = scanner.nextLine();
+                    if (input.equalsIgnoreCase("back"))
+                        break;
+                    if (input.equalsIgnoreCase("show"))
+                        continue;
+                    chat.addMessage(input);
+                    YaGson yaGson = new YaGson();
+                    getChatLineWriter().writeLine(yaGson.toJson(chat));
+                }
             }
+        } catch (Exception e) {
+            View.printError(e);
         }
+    }
+
+    User getUser() {
+        return pack.getUser();
+    }
+
+    ChatLineReader getChatLineReader() {
+        return pack.getChatLineReader();
+    }
+
+    ChatLineWriter getChatLineWriter() {
+        return pack.getChatLineWriter();
+    }
+
+    Socket getSocket() {
+        return pack.getSocket();
     }
 }

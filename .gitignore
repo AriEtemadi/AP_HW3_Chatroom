@@ -71,3 +71,5 @@ fabric.properties
 
 /.idea/
 /National Chatroom.iml
+/src/chats/
+/src/users/
