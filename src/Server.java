@@ -5,23 +5,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 class Server {
-    private List<Socket> sockets = new ArrayList<>();
-    private List<ChatLineWriter> writers = new ArrayList<>();
+    private List<SocketPack> socketPacks = new ArrayList<>();
     private ServerSocket serverSocket;
 
-    Server(int port) throws IOException {
+    private Server(int port) throws IOException {
         this.serverSocket = new ServerSocket(port);
     }
 
-    void run() throws IOException {
+    public static void main(String[] args) throws IOException {
+        Server server = new Server(2048);
+        server.run();
+    }
+
+    private void run() throws IOException {
         while (!serverSocket.isClosed()) {
-            System.out.println("Waiting for the " + (sockets.size() + 1) + "th client...");
+            System.out.println("Waiting for the " + (socketPacks.size() + 1) + "th client...");
             Socket socket = serverSocket.accept();
-            sockets.add(socket);
 
             ChatLineWriter chatLineWriter = new ChatLineWriter(socket.getOutputStream());
             chatLineWriter.start();
-            writers.add(chatLineWriter);
 
             Chat.updateTo(chatLineWriter);
             User.updateTo(chatLineWriter);
@@ -45,11 +47,15 @@ class Server {
                 }
             };
             chatLineReader.start();
+
+            SocketPack socketPack = new SocketPack(socket, chatLineWriter, chatLineReader, null);
+            socketPacks.add(socketPack);
         }
     }
 
     private void refreshAll() {
-        for (ChatLineWriter writer : writers) {
+        for (SocketPack s : socketPacks) {
+            ChatLineWriter writer = s.getChatLineWriter();
             Chat.updateTo(writer);
             User.updateTo(writer);
         }

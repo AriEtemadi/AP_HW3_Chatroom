@@ -90,10 +90,6 @@ public class Client extends Application {
                     }
                     chat.show();
                     String input = scanner.nextLine();
-                    if (input.equalsIgnoreCase("back"))
-                        break;
-                    if (input.equalsIgnoreCase("show"))
-                        continue;
                     chat.addMessage(input);
                     YaGson yaGson = new YaGson();
                     getChatLineWriter().writeLine(yaGson.toJson(chat));

@@ -1,5 +1,6 @@
 import com.gilecode.yagson.YaGson;
 import com.gilecode.yagson.YaGsonBuilder;
+import com.gilecode.yagson.com.google.gson.JsonSyntaxException;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -15,7 +16,7 @@ class User {
     private static List<User> users = new ArrayList<>();
     private static int idCount;
     private String username;
-    int id;
+    private int id;
 
     static {
 //        initializeUsers();
@@ -47,16 +48,15 @@ class User {
             idCount = Math.max(idCount + 1, user.id);
             if (isServer)
                 Chat.makeChats(user);
-        } catch (Exception e) {
-            View.printError(e);
+        } catch (JsonSyntaxException e) {
+            //
         }
     }
 
     static void updateTo(ChatLineWriter chatLineWriter) {
-        for (User user : users) {
-            YaGson yaGson = new YaGson();
+        YaGson yaGson = new YaGson();
+        for (User user : users)
             chatLineWriter.writeLine(yaGson.toJson(user));
-        }
     }
 
     List<Chat> getChats() {
@@ -146,5 +146,9 @@ class User {
 
     String getUsername() {
         return username;
+    }
+
+    int getId() {
+        return id;
     }
 }
