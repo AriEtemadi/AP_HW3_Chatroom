@@ -25,6 +25,7 @@ class ChatsMenu {
         View.getInstance().setScene(scene);
 
         initChatsColumn();
+        showChatsColumn();
         root.getChildren().addAll(chatsColumn);
 
         save();
@@ -33,17 +34,33 @@ class ChatsMenu {
     private void initChatsColumn() {
         chatsColumn = new VBox();
         chatsColumn.relocate(50, 50);
+    }
 
-        List<Chat> chats = client.getUser().getChats();
-        for (Chat chat : chats) {
-            Button button = new Button();
-            button.setText(chat.getNameFor(client.getUser()));
-            button.setOnAction(event -> {
-                ChatScene chatScene = new ChatScene(chat, client.getUser());
-                chatScene.run();
-            });
-            chatsColumn.getChildren().add(button);
-        }
+    private void showChatsColumn() {
+        AnimationTimer animationTimer = new AnimationTimer() {
+            long last = 0;
+            int chatCount = 0;
+
+            @Override
+            public void handle(long now) {
+                if (client.getUser() != null)
+                    if (now - last > 100) {
+                        List<Chat> chats = client.getUser().getChats();
+                        for (int i = chatCount; i < chats.size(); i++) {
+                            Chat chat = chats.get(i);
+                            Button button = new Button();
+                            button.setText(chat.getNameFor(client.getUser()));
+                            button.setOnAction(event -> {
+                                ChatScene chatScene = new ChatScene(chat, client);
+                                chatScene.run();
+                            });
+                            chatsColumn.getChildren().add(button);
+                            chatCount++;
+                        }
+                    }
+            }
+        };
+        animationTimer.start();
     }
 
     private void save() {

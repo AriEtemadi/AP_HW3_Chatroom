@@ -1,3 +1,4 @@
+import javafx.animation.AnimationTimer;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -8,11 +9,11 @@ import javafx.scene.paint.Color;
 
 class ChatScene {
     private Chat chat;
-    private User user;
+    private Client client;
 
-    ChatScene(Chat chat, User user) {
+    ChatScene(Chat chat, Client client) {
         this.chat = chat;
-        this.user = user;
+        this.client = client;
     }
 
     private Group root;
@@ -34,9 +35,12 @@ class ChatScene {
         initSend();
         initBack();
 
+        showMessages();
+
         root.getChildren().addAll(messages, input, send, back);
 
         backAction();
+        sendButtonAction();
     }
 
     private void initMessages() {
@@ -49,11 +53,30 @@ class ChatScene {
         }
     }
 
+    private void showMessages() {
+        AnimationTimer animationTimer = new AnimationTimer() {
+            long last = 0;
+
+            @Override
+            public void handle(long now) {
+                if (now - last > 100) {
+                    messages.getChildren().remove(0, messages.getChildren().size());
+                    for (String message : chat.getMessages()) {
+                        Label msg = new Label(message);
+                        messages.getChildren().add(msg);
+                    }
+                }
+            }
+        };
+        animationTimer.start();
+    }
+
     private void initInput() {
         input = new TextField();
         input.setPromptText("MESSAGE");
         input.relocate(10, 450);
         input.setFocusTraversable(false);
+        input.setOnAction(event -> sendAction());
     }
 
     private void initSend() {
@@ -68,6 +91,17 @@ class ChatScene {
 
     private void backAction() {
         back.setOnAction(event -> View.getInstance().back());
+    }
+
+    private void sendButtonAction() {
+        send.setOnAction(event -> sendAction());
+
+    }
+
+    private void sendAction() {
+        chat.addMessage(input.getText());
+        client.updateChatsForServer();
+        input.setText("");
     }
 
 }

@@ -1,6 +1,5 @@
 import com.gilecode.yagson.YaGson;
 import com.gilecode.yagson.YaGsonBuilder;
-import com.gilecode.yagson.com.google.gson.JsonSyntaxException;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -33,15 +32,15 @@ class Chat {
         try {
             YaGson yaGson = new YaGson();
             Chat chat = yaGson.fromJson(json, Chat.class);
-            for (int i = 0; i < chats.size(); i++)
-                if (chats.get(i).id == chat.id) {
-                    chats.set(i, chat);
+            for (Chat value : chats)
+                if (value.id == chat.id) {
+                    value.copyFrom(chat);
                     return;
                 }
 
             idCount = Math.max(idCount, chat.id + 1);
             chats.add(chat);
-        } catch (JsonSyntaxException e) {
+        } catch (Exception e) {
             //
         }
     }
@@ -50,6 +49,13 @@ class Chat {
         YaGson yaGson = new YaGson();
         for (Chat chat : chats)
             chatLineWriter.writeLine(yaGson.toJson(chat));
+    }
+
+    void copyFrom(Chat chat) {
+        this.messages = chat.messages;
+        this.name = chat.name;
+        this.id = chat.id;
+        this.users = chat.users;
     }
 
     static void showChats() {

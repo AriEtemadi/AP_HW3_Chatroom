@@ -1,10 +1,8 @@
-import com.gilecode.yagson.YaGson;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.Scanner;
 
 public class Client extends Application {
 
@@ -27,16 +25,20 @@ public class Client extends Application {
         prepareForTest();
     }
 
+    private Socket socket;
+    private ChatLineWriter writer;
+    private ChatLineReader reader;
+    private User user;
+    private String username;
+    private ChatsMenu chatsMenu;
+
+
     Client(String username, int port) throws IOException {
-        User user = User.getOrMake(username);
-        Socket socket = new Socket("localhost", port);
-        ChatLineWriter chatLineWriter = new ChatLineWriter(socket.getOutputStream());
-        ChatLineReader chatLineReader = new ChatLineReader(socket.getInputStream());
-        this.pack = new SocketPack(socket, chatLineWriter, chatLineReader, user);
+        this.username = username;
+        this.socket = new Socket("localhost", port);
+        this.writer = new ChatLineWriter(socket.getOutputStream());
     }
 
-    private ChatsMenu chatsMenu;
-    private SocketPack pack;
 
     void runn() {
         new Thread(this::run).start();
@@ -44,94 +46,43 @@ public class Client extends Application {
         chatsMenu.run();
     }
 
-    void run() {
+    private void run() {
         try {
-
-            getChatLineWriter().start();
-
-            ChatLineReader chatLineReader = new ChatLineReader(getSocket().getInputStream()) {
+            writer.start();
+            reader = new ChatLineReader(socket.getInputStream()) {
                 @Override
                 public void run() {
-//                System.out.println("start running");
                     while (scanner.hasNextLine()) {
-                        System.out.println("run updates...");
+                        System.out.println("running updates...");
                         String json = scanner.nextLine();
                         Chat.updateFrom(json);
                         User.updateFrom(json, false);
                     }
-//                System.out.println("end running");
                 }
             };
-            pack.setChatLineReader(chatLineReader);
-            chatLineReader.start();
+            reader.start();
 
             Thread.sleep(300);
-            getUser().resetID();
-            User.updateTo(getChatLineWriter());
 
-            while (!pack.getSocket().isClosed()) {
-                System.out.println("Which chat do you want? Enter the id.");
+            user = User.getOrMake(username);
+            User.updateTo(writer);
 
-                Chat.showChats();
-                User.showUsers();
-
-                Scanner scanner = new Scanner(System.in);
-                String chatName = scanner.nextLine();
-                Chat chat = getUser().getChatByID(Integer.parseInt(chatName));
-                if (chat == null) {
-                    System.out.println("invalid chat.");
-                    continue;
-                }
-                while (true) {
-                    chat = getUser().getChatByID(Integer.parseInt(chatName));
-                    if (chat == null) {
-                        System.err.println("null");
-                        break;
-                    }
-                    chat.show();
-                    String input = scanner.nextLine();
-                    chat.addMessage(input);
-                    YaGson yaGson = new YaGson();
-                    getChatLineWriter().writeLine(yaGson.toJson(chat));
-                }
-            }
         } catch (Exception e) {
             View.printError(e);
         }
     }
 
     User getUser() {
-        return pack.getUser();
-    }
-
-    private ChatLineReader getChatLineReader() {
-        return pack.getChatLineReader();
-    }
-
-    private ChatLineWriter getChatLineWriter() {
-        return pack.getChatLineWriter();
-    }
-
-    private Socket getSocket() {
-        return pack.getSocket();
+        return user;
     }
 
     private static void prepareForTest() {
-        User a = new User("a");
-        User b = new User("b");
-        User c = new User("c");
+        new User("a");
+        new User("b");
+        new User("c");
+    }
 
-        Chat c1 = new Chat();
-        c1.addUser(a);
-        c1.addUser(b);
-        c1.addMessage("a: hi b!");
-        c1.addMessage("b: fuck you a;");
-        Chat.addChat(c1);
-
-        Chat c2 = new Chat();
-        c2.addUser(a);
-        c2.addUser(c);
-        c2.addMessage("A chat between a and c");
-        Chat.addChat(c2);
+    void updateChatsForServer() {
+        Chat.updateTo(writer);
     }
 }

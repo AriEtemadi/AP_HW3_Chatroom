@@ -50,7 +50,7 @@ class WelcomeScene {
         username.setOnAction(event -> {
             String name = username.getText();
             try {
-                Client client = new Client(name, 2048);
+                Client client = new Client(name, Server.getPORT());
                 client.runn();
             } catch (Exception e) {
                 View.printError(e);

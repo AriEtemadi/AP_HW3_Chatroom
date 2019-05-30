@@ -4,14 +4,12 @@ class SocketPack {
     private Socket socket;
     private ChatLineWriter chatLineWriter;
     private ChatLineReader chatLineReader;
-    private User user;
 
     SocketPack(Socket socket, ChatLineWriter chatLineWriter,
-               ChatLineReader chatLineReader, User user) {
+               ChatLineReader chatLineReader) {
         this.socket = socket;
         this.chatLineWriter = chatLineWriter;
         this.chatLineReader = chatLineReader;
-        this.user = user;
     }
 
     Socket getSocket() {
@@ -24,10 +22,6 @@ class SocketPack {
 
     ChatLineReader getChatLineReader() {
         return chatLineReader;
-    }
-
-    User getUser() {
-        return user;
     }
 
     void setChatLineReader(ChatLineReader chatLineReader) {
