@@ -14,11 +14,11 @@ import java.util.List;
 class User {
     private static List<User> users = new ArrayList<>();
     private static int idCount;
-    String username;
+    private String username;
     int id;
 
     static {
-        initializeUsers();
+//        initializeUsers();
     }
 
     User(String username) {
@@ -61,7 +61,7 @@ class User {
 
     List<Chat> getChats() {
         List<Chat> chats = new ArrayList<>();
-        for (Chat chat : Chat.chats)
+        for (Chat chat : Chat.getChats())
             if (chat.hasThis(this))
                 chats.add(chat);
         return chats;
@@ -69,7 +69,7 @@ class User {
 
     Chat getChatByID(int id) {
         for (Chat chat : getChats())
-            if (chat.id == id)
+            if (chat.getId() == id)
                 return chat;
         return null;
     }
@@ -123,7 +123,28 @@ class User {
         users.forEach(User::save);
     }
 
-    public static List<User> getUsers() {
+    static List<User> getUsers() {
         return users;
+    }
+
+    static User getUserByName(String username) {
+        for (User user : users)
+            if (user.username.equals(username))
+                return user;
+        return null;
+    }
+
+    static boolean hasThis(String username) {
+        return getUserByName(username) != null;
+    }
+
+    static User getOrMake(String username) {
+        if (hasThis(username))
+            return getUserByName(username);
+        return new User(username);
+    }
+
+    String getUsername() {
+        return username;
     }
 }

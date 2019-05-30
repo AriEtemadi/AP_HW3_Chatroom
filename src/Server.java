@@ -36,7 +36,7 @@ class Server {
                         Chat.updateFrom(json);
                         User.updateFrom(json, true);
                         refreshAll();
-                        System.out.println(Chat.chats.size() + " chats");
+                        System.out.println(Chat.getChats().size() + " chats");
                         Chat.showChats();
                         System.out.println(User.getUsers().size() + " users");
                         User.showUsers();

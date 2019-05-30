@@ -19,11 +19,16 @@ public class Client extends Application {
         View.getInstance().start();
     }
 
+    // this is necessary:
     public Client() {
     }
 
+    static {
+        prepareForTest();
+    }
+
     Client(String username, int port) throws IOException {
-        User user = new User(username);
+        User user = User.getOrMake(username);
         Socket socket = new Socket("localhost", port);
         ChatLineWriter chatLineWriter = new ChatLineWriter(socket.getOutputStream());
         ChatLineReader chatLineReader = new ChatLineReader(socket.getInputStream());
@@ -103,15 +108,34 @@ public class Client extends Application {
         return pack.getUser();
     }
 
-    ChatLineReader getChatLineReader() {
+    private ChatLineReader getChatLineReader() {
         return pack.getChatLineReader();
     }
 
-    ChatLineWriter getChatLineWriter() {
+    private ChatLineWriter getChatLineWriter() {
         return pack.getChatLineWriter();
     }
 
-    Socket getSocket() {
+    private Socket getSocket() {
         return pack.getSocket();
+    }
+
+    private static void prepareForTest() {
+        User a = new User("a");
+        User b = new User("b");
+        User c = new User("c");
+
+        Chat c1 = new Chat();
+        c1.addUser(a);
+        c1.addUser(b);
+        c1.addMessage("a: hi b!");
+        c1.addMessage("b: fuck you a;");
+        Chat.addChat(c1);
+
+        Chat c2 = new Chat();
+        c2.addUser(a);
+        c2.addUser(c);
+        c2.addMessage("A chat between a and c");
+        Chat.addChat(c2);
     }
 }

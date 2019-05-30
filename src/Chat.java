@@ -12,16 +12,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 class Chat {
-    static int idCount = 1;
-    static List<Chat> chats = new ArrayList<>();
+    private static int idCount = 1;
+    private static List<Chat> chats = new ArrayList<>();
 
-    int id;
-    String name;
-    List<User> users = new ArrayList<>();
-    List<String> messages = new ArrayList<>();
+    private int id;
+    private String name;
+    private List<User> users = new ArrayList<>();
+    private List<String> messages = new ArrayList<>();
 
     static {
-        initializeChats();
+//        initializeChats();
     }
 
     void addMessage(String message) {
@@ -57,14 +57,14 @@ class Chat {
         for (Chat chat : chats) {
             System.out.print(chat.id + ": ");
             for (User user : chat.users)
-                System.out.print(user.username + ", ");
+                System.out.print(user.getUsername() + ", ");
             System.out.println();
         }
     }
 
     static void makeChats(User user) {
         for (User u : User.getUsers())
-            if (!u.username.equals(user.username)) {
+            if (!u.getUsername().equals(user.getUsername())) {
                 Chat chat = new Chat();
                 chat.setID();
                 chat.addUser(user);
@@ -73,8 +73,9 @@ class Chat {
             }
     }
 
-    private void addUser(User user) {
-        users.add(user);
+    void addUser(User user) {
+        if (!hasThis(user))
+            users.add(user);
     }
 
     private void setID() {
@@ -138,5 +139,39 @@ class Chat {
 
     static void saveAll() {
         chats.forEach(Chat::save);
+    }
+
+    static List<Chat> getChats() {
+        return chats;
+    }
+
+    String getName() {
+        return name;
+    }
+
+    List<User> getUsers() {
+        return users;
+    }
+
+    List<String> getMessages() {
+        return messages;
+    }
+
+    int getId() {
+        return id;
+    }
+
+    static void addChat(Chat chat) {
+        if (chat != null)
+            chats.add(chat);
+    }
+
+    String getNameFor(User user) {
+        if (users.size() > 2)
+            return name;
+        for (User u : users)
+            if (!u.getUsername().equals(user.getUsername()))
+                return u.getUsername();
+        return null;
     }
 }

@@ -38,7 +38,7 @@ class ChatsMenu {
         List<Chat> chats = client.getUser().getChats();
         for (Chat chat : chats) {
             Button button = new Button();
-            button.setText(chat.name);
+            button.setText(chat.getNameFor(client.getUser()));
             chatsColumn.getChildren().add(button);
         }
     }
