@@ -8,7 +8,9 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
 
+import java.util.ArrayList;
 import java.util.List;
 
 class ChatsMenu {
@@ -22,13 +24,15 @@ class ChatsMenu {
     private VBox chatsColumn;
     private Group msgGroup;
     private TextField input;
-    private TextField groupSize;
+    private TextField groupName;
+    private Label createGroupErrMsg;
     private Button send;
     private Button back;
     private Button lastClickedButton;
     private Button createGroup;
     private VBox messages;
     private Scene scene;
+    private List<Button> rightClickedButtons = new ArrayList<>();
 
     ChatsMenu(Client client) {
         this.client = client;
@@ -42,14 +46,13 @@ class ChatsMenu {
         initChatsColumn();
         initMsgGroup();
         initCreateGroup();
-        initGroupSize();
+        initGroupName();
+        initCreateGroupErrMsg();
         showChatsColumn();
-        root.getChildren().addAll(chatsColumn, createGroup, groupSize);
+        root.getChildren().addAll(chatsColumn, createGroup, groupName, createGroupErrMsg);
 
         createGroupButtonAction();
-        groupSizeButtonAction();
-
-        save();
+        groupNameButtonAction();
     }
 
     private void initChatsColumn() {
@@ -160,6 +163,19 @@ class ChatsMenu {
                                 button.setStyle("-fx-background-color: #ffff00;");
                                 lastClickedButton = button;
                             });
+                            button.setOnMouseReleased(event -> {
+                                if (event.getButton() == MouseButton.SECONDARY)
+                                    if (rightClickedButtons.contains(button)) {
+                                        rightClickedButtons.remove(button);
+                                        if (lastClickedButton == button)
+                                            button.setStyle("-fx-background-color: #ffff00;");
+                                        else
+                                            button.setStyle("-fx-background-color: #ffffff;");
+                                    } else {
+                                        rightClickedButtons.add(button);
+                                        button.setStyle("-fx-background-color: #ff00ff;");
+                                    }
+                            });
                             button.setPrefWidth(chatsColumn.getPrefWidth());
                             button.setStyle("-fx-background-color: #ffffff;");
                             button.setShape(new Rectangle(1, 1));
@@ -172,47 +188,65 @@ class ChatsMenu {
         animationTimer.start();
     }
 
-    private void save() {
-        new AnimationTimer() {
-            long last = 0;
-
-            @Override
-            public void handle(long now) {
-                if (now - last > 100) {
-                    User.saveAll();
-                    Chat.saveAll();
-                    last = now;
-                }
-            }
-        }.start();
-    }
-
     private void initCreateGroup() {
         createGroup = new Button("CREATE GROUP");
         createGroup.relocate(BORDER_DIST, HEIGHT - 30);
     }
 
     private void createGroupButtonAction() {
-        createGroup.setOnAction(event -> createGroupAction());
-    }
-
-    private void initGroupSize() {
-        groupSize = new TextField();
-        groupSize.setPromptText("GROUP SIZE");
-        groupSize.setPrefWidth(chatsColumn.getPrefWidth());
-        groupSize.relocate(BORDER_DIST, HEIGHT - 62);
-        groupSize.setFocusTraversable(false);
-        createGroup.setOnMouseReleased(event -> {
-            if (event.getButton() == MouseButton.SECONDARY)
-                System.out.println("right click");
+        createGroup.setOnAction(event -> {
+            createGroupAction();
+            eraseRightClicked();
         });
     }
 
-    private void groupSizeButtonAction() {
-        groupSize.setOnAction(event -> createGroupAction());
+    private void initGroupName() {
+        groupName = new TextField();
+        groupName.setPromptText("GROUP NAME");
+        groupName.setPrefWidth(chatsColumn.getPrefWidth());
+        groupName.relocate(BORDER_DIST, HEIGHT - 62);
+        groupName.setFocusTraversable(false);
+    }
+
+    private void groupNameButtonAction() {
+        groupName.setOnAction(event -> {
+            createGroupAction();
+            eraseRightClicked();
+        });
+    }
+
+    private void eraseRightClicked() {
+        for (Button button : rightClickedButtons)
+            if (lastClickedButton == button)
+                button.setStyle("-fx-background-color: #ffff00;");
+            else
+                button.setStyle("-fx-background-color: #ffffff;");
+        rightClickedButtons = new ArrayList<>();
     }
 
     private void createGroupAction() {
+        if (rightClickedButtons.size() < 2) {
+            createGroupErrMsg.setText("NOT ENOUGH MEMBERS");
+            return;
+        }
+        if (!Chat.isGroupNameValid(groupName.getText())) {
+            createGroupErrMsg.setText("INVALID NAME");
+            return;
+        }
+        List<String> usernames = new ArrayList<>();
+        for (Button button : rightClickedButtons)
+            usernames.add(button.getText());
+        boolean wasSuccessful = client.createGroup(groupName.getText(), usernames);
+        if (!wasSuccessful)
+            createGroupErrMsg.setText("ERROR");
+        else
+            createGroupErrMsg.setText("");
+    }
 
+    private void initCreateGroupErrMsg() {
+        createGroupErrMsg = new Label("");
+        createGroupErrMsg.relocate(BORDER_DIST, HEIGHT - 77);
+        createGroupErrMsg.setTextFill(Color.RED);
+        createGroupErrMsg.setFont(Font.font(9));
     }
 }

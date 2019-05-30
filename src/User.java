@@ -13,13 +13,9 @@ import java.util.List;
 
 class User {
     private static List<User> users = new ArrayList<>();
-    private static int idCount;
+    private static int idCount = 1;
     private String username;
     private int id;
-
-    static {
-//        initializeUsers();
-    }
 
     User(String username) {
         this.username = username;
@@ -96,12 +92,13 @@ class User {
             YaGson yaGson = yaGsonBuilder.create();
 
             yaGson.toJson(this, isr);
+            isr.flush();
         } catch (IOException e) {
             View.printError(e);
         }
     }
 
-    private static void initializeUsers() {
+    static void initializeUsers() {
         File path = new File("src/users");
         File[] files = path.listFiles();
         if (files == null)

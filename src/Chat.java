@@ -19,9 +19,18 @@ class Chat {
     private String name;
     private List<User> users = new ArrayList<>();
     private List<String> messages = new ArrayList<>();
+    private User maker;
 
-    static {
-//        initializeChats();
+    Chat() {
+    }
+
+    Chat(String name, User maker, List<User> users) {
+        this.name = name;
+        this.maker = maker;
+        this.users.add(maker);
+        this.users.addAll(users);
+        this.id = idCount++;
+        chats.add(this);
     }
 
     void addMessage(String message) {
@@ -116,12 +125,13 @@ class Chat {
             YaGson yaGson = yaGsonBuilder.create();
 
             yaGson.toJson(this, isr);
+            isr.flush();
         } catch (IOException e) {
             View.printError(e);
         }
     }
 
-    private static void initializeChats() {
+    static void initializeChats() {
         File path = new File("src/chats");
         File[] files = path.listFiles();
         if (files == null)
@@ -179,5 +189,20 @@ class Chat {
             if (!u.getUsername().equals(user.getUsername()))
                 return u.getUsername();
         return null;
+    }
+
+    static boolean hasThisName(String name) {
+        for (Chat chat : chats)
+            if (chat.name != null && chat.name.equals(name))
+                return true;
+        return false;
+    }
+
+    static boolean isGroupNameValid(String name) {
+        if (name == null || name.equals(""))
+            return false;
+        if (hasThisName(name))
+            return false;
+        return true;
     }
 }

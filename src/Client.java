@@ -3,6 +3,8 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Client extends Application {
 
@@ -22,7 +24,7 @@ public class Client extends Application {
     }
 
     static {
-        prepareForTest();
+//        prepareForTest();
     }
 
     private Socket socket;
@@ -62,7 +64,7 @@ public class Client extends Application {
             };
             reader.start();
 
-            Thread.sleep(300);
+            Thread.sleep(500);
 
             user = User.getOrMake(username);
             User.updateTo(writer);
@@ -76,13 +78,22 @@ public class Client extends Application {
         return user;
     }
 
-    private static void prepareForTest() {
-        new User("a");
-        new User("b");
-        new User("c");
-    }
-
     void updateChatsForServer() {
         Chat.updateTo(writer);
+    }
+
+    boolean createGroup(String text, List<String> usernames) {
+        if (text == null || usernames == null || usernames.size() < 2)
+            return false;
+        List<User> members = new ArrayList<>();
+        for (String name : usernames) {
+            User user = User.getUserByName(name);
+            if (user == null)
+                return false;
+            members.add(user);
+        }
+        new Chat(text, user, members);
+        Chat.updateTo(writer);
+        return true;
     }
 }

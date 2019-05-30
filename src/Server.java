@@ -19,6 +19,9 @@ class Server {
     }
 
     private void run() throws IOException {
+        User.initializeUsers();
+        Chat.initializeChats();
+
         while (!serverSocket.isClosed()) {
             System.out.println("Waiting for the " + (packs.size() + 1) + "th client...");
             Socket socket = serverSocket.accept();
@@ -36,6 +39,8 @@ class Server {
                         String json = scanner.nextLine();
                         Chat.updateFrom(json);
                         User.updateFrom(json, true);
+                        Chat.saveAll();
+                        User.saveAll();
                         refreshAll();
                         System.out.println(Chat.getChats().size() + " chats");
                         Chat.showChats();
