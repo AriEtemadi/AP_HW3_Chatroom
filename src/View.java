@@ -1,7 +1,12 @@
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+import java.util.ArrayList;
+import java.util.List;
+
 class View {
+
+    private static List<Scene> scenes = new ArrayList<>();
 
     private View() {
     }
@@ -21,6 +26,7 @@ class View {
 
     void setScene(Scene scene) {
         primaryStage.setScene(scene);
+        scenes.add(scene);
     }
 
     void setPrimaryStage(Stage primaryStage) {
@@ -31,5 +37,11 @@ class View {
         System.out.println(e.getMessage());
         for (StackTraceElement s : e.getStackTrace())
             System.out.println(s);
+    }
+
+    void back() {
+        if (scenes.size() < 2)
+            return;
+        setScene(scenes.get(scenes.size() - 2));
     }
 }

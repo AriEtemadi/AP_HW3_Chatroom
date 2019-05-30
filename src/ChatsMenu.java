@@ -8,7 +8,6 @@ import javafx.scene.paint.Color;
 import java.util.List;
 
 class ChatsMenu {
-
     private Client client;
     private final int WIDTH = 400;
     private final int HEIGHT = 500;
@@ -39,6 +38,10 @@ class ChatsMenu {
         for (Chat chat : chats) {
             Button button = new Button();
             button.setText(chat.getNameFor(client.getUser()));
+            button.setOnAction(event -> {
+                ChatScene chatScene = new ChatScene(chat, client.getUser());
+                chatScene.run();
+            });
             chatsColumn.getChildren().add(button);
         }
     }
