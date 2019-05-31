@@ -23,17 +23,13 @@ public class Client extends Application {
     public Client() {
     }
 
-    static {
-//        prepareForTest();
-    }
-
     private Socket socket;
     private ChatLineWriter writer;
     private ChatLineReader reader;
     private User user;
     private String username;
     private ChatsMenu chatsMenu;
-
+    private List<Chat> showedChats = new ArrayList<>();
 
     Client(String username, int port) throws IOException {
         this.username = username;
@@ -96,4 +92,37 @@ public class Client extends Application {
         Chat.updateTo(writer);
         return true;
     }
+
+    boolean addMember(String group, List<String> usernames) {
+        if (group == null || usernames == null || usernames.isEmpty())
+            return false;
+        Chat chat = Chat.getChatByName(group);
+        if (chat == null || chat.getMaker().getId() != user.getId())
+            return false;
+        List<User> users = new ArrayList<>();
+        for (String name : usernames) {
+            User user = User.getUserByName(name);
+            if (user == null)
+                return false;
+            if (chat.hasThis(user))
+                return false;
+            users.add(user);
+        }
+        chat.addUser(users);
+        Chat.updateTo(writer);
+        return true;
+    }
+
+    void addShowedChat(Chat chat) {
+        if (chat != null)
+            showedChats.add(chat);
+    }
+
+    boolean isShowed(Chat chat) {
+        for (Chat c : showedChats)
+            if (c.getId() == chat.getId())
+                return true;
+        return false;
+    }
+
 }

@@ -26,6 +26,7 @@ class ChatsMenu {
     private TextField input;
     private TextField groupName;
     private Label createGroupErrMsg;
+    private Button addMember;
     private Button send;
     private Button back;
     private Button lastClickedButton;
@@ -44,15 +45,20 @@ class ChatsMenu {
         View.getInstance().setScene(scene);
 
         initChatsColumn();
+        initAddMember();
         initMsgGroup();
         initCreateGroup();
         initGroupName();
         initCreateGroupErrMsg();
+
         showChatsColumn();
+        showAddMember();
+
         root.getChildren().addAll(chatsColumn, createGroup, groupName, createGroupErrMsg);
 
         createGroupButtonAction();
         groupNameButtonAction();
+        addMemberAction();
     }
 
     private void initChatsColumn() {
@@ -145,42 +151,42 @@ class ChatsMenu {
     private void showChatsColumn() {
         AnimationTimer animationTimer = new AnimationTimer() {
             long last = 0;
-            int chatCount = 0;
 
             @Override
             public void handle(long now) {
                 if (client.getUser() != null)
                     if (now - last > 100) {
                         List<Chat> chats = client.getUser().getChats();
-                        for (int i = chatCount; i < chats.size(); i++) {
-                            Chat chat = chats.get(i);
-                            Button button = new Button();
-                            button.setText(chat.getNameFor(client.getUser()));
-                            button.setOnAction(event -> {
-                                if (lastClickedButton != null)
-                                    lastClickedButton.setStyle("-fx-background-color: #ffffff;");
-                                ChatsMenu.this.chat = chat;
-                                button.setStyle("-fx-background-color: #ffff00;");
-                                lastClickedButton = button;
-                            });
-                            button.setOnMouseReleased(event -> {
-                                if (event.getButton() == MouseButton.SECONDARY)
-                                    if (rightClickedButtons.contains(button)) {
-                                        rightClickedButtons.remove(button);
-                                        if (lastClickedButton == button)
-                                            button.setStyle("-fx-background-color: #ffff00;");
-                                        else
-                                            button.setStyle("-fx-background-color: #ffffff;");
-                                    } else {
-                                        rightClickedButtons.add(button);
-                                        button.setStyle("-fx-background-color: #ff00ff;");
-                                    }
-                            });
-                            button.setPrefWidth(chatsColumn.getPrefWidth());
-                            button.setStyle("-fx-background-color: #ffffff;");
-                            button.setShape(new Rectangle(1, 1));
-                            chatsColumn.getChildren().add(button);
-                            chatCount++;
+                        for (Chat chat : chats) {
+                            if (!client.isShowed(chat)) {
+                                client.addShowedChat(chat);
+                                Button button = new Button();
+                                button.setText(chat.getNameFor(client.getUser()));
+                                button.setOnAction(event -> {
+                                    if (lastClickedButton != null)
+                                        lastClickedButton.setStyle("-fx-background-color: #ffffff;");
+                                    ChatsMenu.this.chat = chat;
+                                    button.setStyle("-fx-background-color: #ffff00;");
+                                    lastClickedButton = button;
+                                });
+                                button.setOnMouseReleased(event -> {
+                                    if (event.getButton() == MouseButton.SECONDARY)
+                                        if (rightClickedButtons.contains(button)) {
+                                            rightClickedButtons.remove(button);
+                                            if (lastClickedButton == button)
+                                                button.setStyle("-fx-background-color: #ffff00;");
+                                            else
+                                                button.setStyle("-fx-background-color: #ffffff;");
+                                        } else {
+                                            rightClickedButtons.add(button);
+                                            button.setStyle("-fx-background-color: #ff00ff;");
+                                        }
+                                });
+                                button.setPrefWidth(chatsColumn.getPrefWidth());
+                                button.setStyle("-fx-background-color: #ffffff;");
+                                button.setShape(new Rectangle(1, 1));
+                                chatsColumn.getChildren().add(button);
+                            }
                         }
                     }
             }
@@ -241,6 +247,7 @@ class ChatsMenu {
             createGroupErrMsg.setText("ERROR");
         else
             createGroupErrMsg.setText("");
+        groupName.setText("");
     }
 
     private void initCreateGroupErrMsg() {
@@ -248,5 +255,48 @@ class ChatsMenu {
         createGroupErrMsg.relocate(BORDER_DIST, HEIGHT - 77);
         createGroupErrMsg.setTextFill(Color.RED);
         createGroupErrMsg.setFont(Font.font(9));
+    }
+
+    private void initAddMember() {
+        addMember = new Button("ADD MEMBER");
+        addMember.relocate(BORDER_DIST, HEIGHT - 105);
+    }
+
+    private void addMemberAction() {
+        addMember.setOnAction(event -> {
+            if (rightClickedButtons.size() < 1)
+                return;
+            if (lastClickedButton == null)
+                return;
+            List<String> usernames = new ArrayList<>();
+            for (Button button : rightClickedButtons)
+                usernames.add(button.getText());
+            boolean wasSuccessful = client.addMember(lastClickedButton.getText(), usernames);
+            if (wasSuccessful)
+                createGroupErrMsg.setText("");
+            else
+                createGroupErrMsg.setText("ERROR");
+            eraseRightClicked();
+        });
+    }
+
+    private void showAddMember() {
+        AnimationTimer animationTimer = new AnimationTimer() {
+            long last = 0;
+
+            @Override
+            public void handle(long now) {
+                if (now - last > 100) {
+                    if (lastClickedButton != null
+                            && Chat.isThisTheMakerOf(client.getUser(), lastClickedButton.getText())) {
+                        if (!root.getChildren().contains(addMember)) {
+                            root.getChildren().add(addMember);
+                        }
+                    } else root.getChildren().remove(addMember);
+                    last = now;
+                }
+            }
+        };
+        animationTimer.start();
     }
 }

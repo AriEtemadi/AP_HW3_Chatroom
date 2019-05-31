@@ -40,7 +40,7 @@ class User {
                 }
 
             users.add(user);
-            idCount = Math.max(idCount + 1, user.id);
+            updateIdCount(user.id);
             if (isServer)
                 Chat.makeChats(user);
         } catch (Exception e) {
@@ -104,8 +104,15 @@ class User {
         if (files == null)
             return;
         for (File file : files)
-            if (file.isFile())
-                users.add(userMaker(file.getPath()));
+            if (file.isFile()) {
+                User user = userMaker(file.getPath());
+                updateIdCount(user.id);
+                users.add(user);
+            }
+    }
+
+    private static void updateIdCount(int id) {
+        idCount = Math.max(idCount + 1, id + 1);
     }
 
     private static User userMaker(String path) {

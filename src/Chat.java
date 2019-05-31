@@ -47,7 +47,7 @@ class Chat {
                     return;
                 }
 
-            idCount = Math.max(idCount, chat.id + 1);
+            updateIdCount(chat.id);
             chats.add(chat);
         } catch (Exception e) {
             //
@@ -89,8 +89,16 @@ class Chat {
     }
 
     void addUser(User user) {
+        if (user == null)
+            return;
         if (!hasThis(user))
             users.add(user);
+    }
+
+    void addUser(List<User> users) {
+        if (users == null)
+            return;
+        users.forEach(this::addUser);
     }
 
     private void setID() {
@@ -137,8 +145,15 @@ class Chat {
         if (files == null)
             return;
         for (File file : files)
-            if (file.isFile())
-                chats.add(chatMaker(file.getPath()));
+            if (file.isFile()) {
+                Chat chat = chatMaker(file.getPath());
+                chats.add(chat);
+                updateIdCount(chat.id);
+            }
+    }
+
+    private static void updateIdCount(int id) {
+        idCount = Math.max(id + 1, idCount + 1);
     }
 
     private static Chat chatMaker(String path) {
@@ -205,4 +220,25 @@ class Chat {
             return false;
         return true;
     }
+
+    static Chat getChatByName(String name) {
+        for (Chat c : chats)
+            if (c.name != null && c.name.equals(name))
+                return c;
+        return null;
+    }
+
+    User getMaker() {
+        return maker;
+    }
+
+    static boolean isThisTheMakerOf(User user, String chatName) {
+        if (user == null || chatName == null)
+            return false;
+        Chat chat = getChatByName(chatName);
+        if (chat == null)
+            return false;
+        return chat.getMaker().getId() == user.getId();
+    }
+
 }
