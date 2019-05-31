@@ -5,6 +5,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseButton;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -29,8 +30,9 @@ class ChatsMenu {
     private Button addMember;
     private Button send;
     private Button back;
-    private Button lastClickedButton;
+    private Button selectedChat;
     private Button createGroup;
+    private HBox emojis;
     private VBox messages;
     private Scene scene;
     private List<Button> rightClickedButtons = new ArrayList<>();
@@ -71,6 +73,8 @@ class ChatsMenu {
     private void initMsgGroup() {
         msgGroup = new Group();
         msgGroup.relocate(BORDER_DIST * 2 + chatsColumn.getPrefWidth() + 20, BORDER_DIST);
+
+        initEmojis();
         initMessages();
         initInput();
         initSend();
@@ -78,10 +82,23 @@ class ChatsMenu {
 
         showMessages();
 
-        msgGroup.getChildren().addAll(messages, input, send, back);
+        msgGroup.getChildren().addAll(messages, input, send, back, emojis);
 
         backAction();
         sendButtonAction();
+    }
+
+    private void initEmojis() {
+        emojis = new HBox();
+        emojis.relocate(0, HEIGHT - 50);
+        String[] emojiStrings = {"\uD83D\uDE02", "\uD83D\uDE0A", "\uD83D\uDE18", "\uD83D\uDE0D", "\uD83D\uDE01"};
+        for (String s : emojiStrings) {
+            Button button = new Button(s);
+            emojis.getChildren().add(button);
+            button.setOnAction(event -> {
+                input.setText(input.getText().concat(s));
+            });
+        }
     }
 
     private void initMessages() {
@@ -163,17 +180,17 @@ class ChatsMenu {
                                 Button button = new Button();
                                 button.setText(chat.getNameFor(client.getUser()));
                                 button.setOnAction(event -> {
-                                    if (lastClickedButton != null)
-                                        lastClickedButton.setStyle("-fx-background-color: #ffffff;");
+                                    if (selectedChat != null)
+                                        selectedChat.setStyle("-fx-background-color: #ffffff;");
                                     ChatsMenu.this.chat = chat;
                                     button.setStyle("-fx-background-color: #ffff00;");
-                                    lastClickedButton = button;
+                                    selectedChat = button;
                                 });
                                 button.setOnMouseReleased(event -> {
                                     if (event.getButton() == MouseButton.SECONDARY)
                                         if (rightClickedButtons.contains(button)) {
                                             rightClickedButtons.remove(button);
-                                            if (lastClickedButton == button)
+                                            if (selectedChat == button)
                                                 button.setStyle("-fx-background-color: #ffff00;");
                                             else
                                                 button.setStyle("-fx-background-color: #ffffff;");
@@ -223,7 +240,7 @@ class ChatsMenu {
 
     private void eraseRightClicked() {
         for (Button button : rightClickedButtons)
-            if (lastClickedButton == button)
+            if (selectedChat == button)
                 button.setStyle("-fx-background-color: #ffff00;");
             else
                 button.setStyle("-fx-background-color: #ffffff;");
@@ -266,12 +283,12 @@ class ChatsMenu {
         addMember.setOnAction(event -> {
             if (rightClickedButtons.size() < 1)
                 return;
-            if (lastClickedButton == null)
+            if (selectedChat == null)
                 return;
             List<String> usernames = new ArrayList<>();
             for (Button button : rightClickedButtons)
                 usernames.add(button.getText());
-            boolean wasSuccessful = client.addMember(lastClickedButton.getText(), usernames);
+            boolean wasSuccessful = client.addMember(selectedChat.getText(), usernames);
             if (wasSuccessful)
                 createGroupErrMsg.setText("");
             else
@@ -287,8 +304,8 @@ class ChatsMenu {
             @Override
             public void handle(long now) {
                 if (now - last > 100) {
-                    if (lastClickedButton != null
-                            && Chat.isThisTheMakerOf(client.getUser(), lastClickedButton.getText())) {
+                    if (selectedChat != null
+                            && Chat.isThisTheMakerOf(client.getUser(), selectedChat.getText())) {
                         if (!root.getChildren().contains(addMember)) {
                             root.getChildren().add(addMember);
                         }
