@@ -32,13 +32,15 @@ class ChatsMenu {
     private final int WIDTH = 350;
     private final int HEIGHT = 400;
     private final int BORDER_DIST = 5;
-    private final String BACKGROUND_COLOR = "-fx-background-color: #18191D;";
+    private final String BACKGROUND_COLOR = "18191D";
     private final String CHATS_COLOR = "-fx-background-color: #282E33;";
     private final String SELECTED_CHAT_COLOR = "-fx-background-color: #009687;";
     private final String RIGHT_CLICKED_COLOR = "-fx-background-color: #65AADD;";
     private final String TEXT_COLOR = "FFFFFF";
     private final String TEXTFIELD_COLOR = "-fx-background-color: #3D444B; -fx-text-fill: #ffffff";
     private final String HOVERED_BUTTON_STYLE = "-fx-background-color: #004D46";
+    private final String[] emojiStrings = {"\uD83D\uDE02", "\uD83D\uDE0A", "\uD83D\uDE18",
+            "\uD83D\uDE0D", "\uD83D\uDE01", "\uD83D\uDE21", "\uD83D\uDE1C", "\uD83D\uDE31", "\uD83D\uDE2D"};
 
     private Scene scene;
     private Group root;
@@ -68,7 +70,7 @@ class ChatsMenu {
 
     void run() {
         root = new Group();
-        scene = new Scene(root, WIDTH, HEIGHT, Color.valueOf("18191D"));
+        scene = new Scene(root, WIDTH, HEIGHT, Color.valueOf(BACKGROUND_COLOR));
         View.getInstance().setScene(scene);
 
         initChatGroup();
@@ -218,8 +220,6 @@ class ChatsMenu {
     private void initEmojis() {
         emojis = new HBox();
         emojis.relocate(0, HEIGHT - 60);
-        String[] emojiStrings = {"\uD83D\uDE02", "\uD83D\uDE0A", "\uD83D\uDE18", "\uD83D\uDE0D", "\uD83D\uDE01"
-                , "\uD83D\uDE21", "\uD83D\uDE1C", "\uD83D\uDE31", "\uD83D\uDE2D"};
         for (String s : emojiStrings) {
             Button button = new Button(s);
             button.setFont(Font.font(10));
@@ -251,8 +251,8 @@ class ChatsMenu {
 
     private void sendAction() {
         String msg;
-        if (input.getText().equalsIgnoreCase("image"))
-            msg = getImageAsString();
+        if (input.getText().trim().matches("send (\\w+)\\.jpg"))
+            msg = getImageAsString(input.getText().trim().split("\\s+")[1]);
         else
             msg = input.getText();
         chat.addMessage(msg);
@@ -260,15 +260,13 @@ class ChatsMenu {
         input.setText("");
     }
 
-    private String getImageAsString() {
+    private String getImageAsString(String imageFileName) {
         try {
-            BufferedImage bImage = ImageIO.read(new File("src/images.jpg"));
+            BufferedImage bImage = ImageIO.read(new File("src/images/" + imageFileName));
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             ImageIO.write(bImage, "jpg", bos);
             byte[] data = bos.toByteArray();
-            YaGson yaGson = new YaGson();
-            return yaGson.toJson(data);
-
+            return (new YaGson()).toJson(data);
         } catch (Exception e) {
             View.printError(e);
         }
@@ -306,8 +304,8 @@ class ChatsMenu {
                 byte[] data = yaGson.fromJson(message, byte[].class);
                 ByteArrayInputStream bis = new ByteArrayInputStream(data);
                 BufferedImage bImage2 = ImageIO.read(bis);
-                ImageIO.write(bImage2, "jpg", new File("src/image2.jpg"));
-                Image image = new Image(new FileInputStream("src/image2.jpg"));
+                ImageIO.write(bImage2, "jpg", new File("src/images/clientImage.jpg"));
+                Image image = new Image(new FileInputStream("src/images/clientImage.jpg"));
                 ImageView imageView = new ImageView(image);
                 imageView.setFitHeight(30);
                 imageView.setFitWidth(30);
@@ -318,9 +316,6 @@ class ChatsMenu {
         } else {
             Label msg = new Label(message);
             msg.setTextFill(Color.valueOf(TEXT_COLOR));
-            msg.setOnMouseClicked(event -> {
-                msg.setStyle("-fx-background-color: #ffffff;");
-            });
             messages.getChildren().add(msg);
         }
     }

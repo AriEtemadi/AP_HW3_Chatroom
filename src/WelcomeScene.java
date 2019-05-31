@@ -14,8 +14,9 @@ class WelcomeScene {
         return instance;
     }
 
-    private final int WIDTH = 300;
-    private final int HEIGHT = 300;
+    private final String BACKGROUND_COLOR = "3D444B";
+    private final int WIDTH = 350;
+    private final int HEIGHT = 400;
     private Group root;
     private Scene scene;
     private TextField username;
@@ -23,7 +24,7 @@ class WelcomeScene {
 
     void run() {
         root = new Group();
-        scene = new Scene(root, WIDTH, HEIGHT, Color.valueOf("4a6084"));
+        scene = new Scene(root, WIDTH, HEIGHT, Color.valueOf(BACKGROUND_COLOR));
         View.getInstance().setScene(scene);
 
         initUsername();
@@ -37,13 +38,15 @@ class WelcomeScene {
     private void initUsername() {
         username = new TextField();
         username.setPromptText("USERNAME");
-        username.relocate(100, 100);
+        username.relocate(100, 200);
         username.setFocusTraversable(false);
+        username.setStyle("-fx-text-fill: #3D444B");
     }
 
     private void initEnterYourName() {
         enterYourName = new Label("ENTER YOUR NAME:");
-        enterYourName.relocate(100, 80);
+        enterYourName.setTextFill(Color.valueOf("009687"));
+        enterYourName.relocate(120, 180);
     }
 
     private void usernameAction() {
