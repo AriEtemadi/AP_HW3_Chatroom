@@ -1,3 +1,4 @@
+import com.gilecode.yagson.YaGson;
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
@@ -5,6 +6,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -12,6 +15,12 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -210,7 +219,7 @@ class ChatsMenu {
         emojis = new HBox();
         emojis.relocate(0, HEIGHT - 60);
         String[] emojiStrings = {"\uD83D\uDE02", "\uD83D\uDE0A", "\uD83D\uDE18", "\uD83D\uDE0D", "\uD83D\uDE01"
-                , "\uD83D\uDE21" , "\uD83D\uDE1C" , "\uD83D\uDE31" , "\uD83D\uDE2D"};
+                , "\uD83D\uDE21", "\uD83D\uDE1C", "\uD83D\uDE31", "\uD83D\uDE2D"};
         for (String s : emojiStrings) {
             Button button = new Button(s);
             button.setFont(Font.font(10));
@@ -241,9 +250,29 @@ class ChatsMenu {
     }
 
     private void sendAction() {
-        chat.addMessage(input.getText());
+        String msg;
+        if (input.getText().equalsIgnoreCase("image"))
+            msg = getImageAsString();
+        else
+            msg = input.getText();
+        chat.addMessage(msg);
         client.updateChatsForServer();
         input.setText("");
+    }
+
+    private String getImageAsString() {
+        try {
+            BufferedImage bImage = ImageIO.read(new File("src/images.jpg"));
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ImageIO.write(bImage, "jpg", bos);
+            byte[] data = bos.toByteArray();
+            YaGson yaGson = new YaGson();
+            return yaGson.toJson(data);
+
+        } catch (Exception e) {
+            View.printError(e);
+        }
+        return null;
     }
 
     private void showMessages() {
@@ -257,11 +286,9 @@ class ChatsMenu {
                     if (chat != null) {
                         if (!root.getChildren().contains(messageGroup))
                             root.getChildren().add(messageGroup);
-                        for (int i = Math.max(chat.getMessages().size() - MAX_MSG_NUM, 0); i < chat.getMessages().size(); i++) {
-                            String message = chat.getMessages().get(i);
-                            Label msg = new Label(message);
-                            msg.setTextFill(Color.valueOf(TEXT_COLOR));
-                            messages.getChildren().add(msg);
+                        for (int i = Math.max(chat.getMessages().size() - MAX_MSG_NUM, 0);
+                             i < chat.getMessages().size(); i++) {
+                            showMessage(chat.getMessages().get(i));
                         }
                         messages.relocate(0, 350 - messages.getHeight());
                     }
@@ -272,19 +299,30 @@ class ChatsMenu {
         showMessages.start();
     }
 
-    private void showEmojies() {
-        AnimationTimer showEmojies = new AnimationTimer() {
-            long last = 0;
-
-            @Override
-            public void handle(long now) {
-                if (now - last > 100) {
-
-                    last = now;
-                }
+    private void showMessage(String message) {
+        if (message.length() > 1000) {
+            try {
+                YaGson yaGson = new YaGson();
+                byte[] data = yaGson.fromJson(message, byte[].class);
+                ByteArrayInputStream bis = new ByteArrayInputStream(data);
+                BufferedImage bImage2 = ImageIO.read(bis);
+                ImageIO.write(bImage2, "jpg", new File("src/image2.jpg"));
+                Image image = new Image(new FileInputStream("src/image2.jpg"));
+                ImageView imageView = new ImageView(image);
+                imageView.setFitHeight(30);
+                imageView.setFitWidth(30);
+                messages.getChildren().add(imageView);
+            } catch (Exception e) {
+                View.printError(e);
             }
-        };
-        showEmojies.start();
+        } else {
+            Label msg = new Label(message);
+            msg.setTextFill(Color.valueOf(TEXT_COLOR));
+            msg.setOnMouseClicked(event -> {
+                msg.setStyle("-fx-background-color: #ffffff;");
+            });
+            messages.getChildren().add(msg);
+        }
     }
 
     private void initCreateGroupNodes() {
