@@ -1,5 +1,4 @@
 import javafx.animation.AnimationTimer;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -30,6 +29,7 @@ class ChatsMenu {
     private final String RIGHT_CLICKED_COLOR = "-fx-background-color: #65AADD;";
     private final String TEXT_COLOR = "FFFFFF";
     private final String TEXTFIELD_COLOR = "-fx-background-color: #3D444B; -fx-text-fill: #ffffff";
+    private final String HOVERED_BUTTON_STYLE = "-fx-background-color: #004D46";
 
     private Scene scene;
     private Group root;
@@ -39,6 +39,7 @@ class ChatsMenu {
     private VBox chatsColumn;
 
     private TextField input;
+    private Button emojiDisplayer;
     private HBox emojis;
     private Button send;
     private Button back;
@@ -72,10 +73,11 @@ class ChatsMenu {
         chatGroup = new Group();
 
         initChatsColumn();
+        initBack();
 
         showChatsColumn();
 
-        chatGroup.getChildren().add(chatsColumn);
+        chatGroup.getChildren().addAll(chatsColumn, back);
     }
 
     private void initChatsColumn() {
@@ -93,6 +95,15 @@ class ChatsMenu {
         chats.setShape(new Rectangle(1, 1));
     }
 
+    private void initBack() {
+        back = new Button("⬅");
+        back.relocate(0, 0);
+        back.setStyle(SELECTED_CHAT_COLOR);
+        back.setTextFill(Color.valueOf(TEXT_COLOR));
+        back.setFont(Font.font(11));
+        back.setShape(new Rectangle(1, 1));
+    }
+
     private void showChatsColumn() {
         AnimationTimer chatsColumn = new AnimationTimer() {
             long last = 0;
@@ -108,6 +119,13 @@ class ChatsMenu {
                                 Button button = new Button();
                                 button.setText(chat.getNameFor(client.getUser()));
                                 button.setTextFill(Color.valueOf(TEXT_COLOR));
+                                button.setOnMouseEntered(e -> button.setStyle(HOVERED_BUTTON_STYLE));
+                                button.setOnMouseExited(e -> {
+                                    if (selectedChat == button)
+                                        button.setStyle(SELECTED_CHAT_COLOR);
+                                    else
+                                        button.setStyle(CHATS_COLOR);
+                                });
                                 button.setOnAction(event -> {
                                     if (selectedChat != null)
                                         selectedChat.setStyle(CHATS_COLOR);
@@ -142,20 +160,21 @@ class ChatsMenu {
 
     private void initMessageGroup() {
         messageGroup = new Group();
-        messageGroup.relocate(BORDER_DIST * 2 + chatsColumn.getPrefWidth() + 20, BORDER_DIST);
+        messageGroup.relocate(BORDER_DIST * 2 + chatsColumn.getPrefWidth(), BORDER_DIST);
 
         initEmojis();
         initMessages();
         initInput();
         initSend();
-        initBack();
+        initEmojiDisplayer();
 
         showMessages();
 
-        messageGroup.getChildren().addAll(messages, input, send, back, emojis);
+        messageGroup.getChildren().addAll(messages, input, send, emojiDisplayer);
 
         backAction();
         sendButtonAction();
+        emojiDisplayerAction();
     }
 
     private void initMessages() {
@@ -166,7 +185,7 @@ class ChatsMenu {
     private void initInput() {
         input = new TextField();
         input.setPromptText("MESSAGE");
-        input.relocate(0, HEIGHT - 35);
+        input.relocate(30, HEIGHT - 34);
         input.setPrefWidth(165);
         input.setFocusTraversable(false);
         input.setOnAction(event -> sendAction());
@@ -174,25 +193,32 @@ class ChatsMenu {
     }
 
     private void initSend() {
-        send = new Button("SEND");
-        send.relocate(170, HEIGHT - 35);
+        send = new Button("\uD83D\uDCE8");
+        send.relocate(200, HEIGHT - 34);
+        send.setStyle(TEXTFIELD_COLOR);
+        send.setAlignment(Pos.CENTER);
     }
 
-    private void initBack() {
-        back = new Button("BACK");
-        back.relocate(170, HEIGHT - 35 * 2);
+    private void initEmojiDisplayer() {
+        emojiDisplayer = new Button("\uD83D\uDE01");
+        emojiDisplayer.relocate(0, HEIGHT - 34);
+        emojiDisplayer.setStyle(TEXTFIELD_COLOR);
+        emojiDisplayer.setAlignment(Pos.CENTER);
     }
 
     private void initEmojis() {
         emojis = new HBox();
-        emojis.relocate(0, HEIGHT - 50);
-        String[] emojiStrings = {"\uD83D\uDE02", "\uD83D\uDE0A", "\uD83D\uDE18", "\uD83D\uDE0D", "\uD83D\uDE01"};
+        emojis.relocate(0, HEIGHT - 60);
+        String[] emojiStrings = {"\uD83D\uDE02", "\uD83D\uDE0A", "\uD83D\uDE18", "\uD83D\uDE0D", "\uD83D\uDE01"
+                , "\uD83D\uDE21" , "\uD83D\uDE1C" , "\uD83D\uDE31" , "\uD83D\uDE2D"};
         for (String s : emojiStrings) {
             Button button = new Button(s);
+            button.setFont(Font.font(10));
+            button.setStyle(TEXTFIELD_COLOR);
+            button.setAlignment(Pos.CENTER);
+            button.setShape(new Rectangle(1, 1));
+            button.setOnAction(event -> input.setText(input.getText().concat(s)));
             emojis.getChildren().add(button);
-            button.setOnAction(event -> {
-                input.setText(input.getText().concat(s));
-            });
         }
     }
 
@@ -203,6 +229,15 @@ class ChatsMenu {
     private void sendButtonAction() {
         send.setOnAction(event -> sendAction());
 
+    }
+
+    private void emojiDisplayerAction() {
+        emojiDisplayer.setOnAction(event -> {
+            if (messageGroup.getChildren().contains(emojis))
+                messageGroup.getChildren().remove(emojis);
+            else
+                messageGroup.getChildren().add(emojis);
+        });
     }
 
     private void sendAction() {
@@ -237,6 +272,21 @@ class ChatsMenu {
         showMessages.start();
     }
 
+    private void showEmojies() {
+        AnimationTimer showEmojies = new AnimationTimer() {
+            long last = 0;
+
+            @Override
+            public void handle(long now) {
+                if (now - last > 100) {
+
+                    last = now;
+                }
+            }
+        };
+        showEmojies.start();
+    }
+
     private void initCreateGroupNodes() {
         initCreateGroup();
         initAddMember();
@@ -252,7 +302,7 @@ class ChatsMenu {
 
     private void initCreateGroup() {
         createGroup = new Button("CREATE GROUP");
-        createGroup.relocate(0, HEIGHT - 53);
+        createGroup.relocate(0, HEIGHT - 56);
         createGroup.setPrefWidth(ChatsMenu.this.chatsColumn.getPrefWidth());
         createGroup.setStyle("-fx-background-color: #df5b5e;");
         createGroup.setShape(new Rectangle(1, 1));
@@ -262,9 +312,9 @@ class ChatsMenu {
 
     private void initCreateGroupErrMsg() {
         createGroupErrMsg = new Label("");
-        createGroupErrMsg.relocate(BORDER_DIST, HEIGHT - 77);
+        createGroupErrMsg.relocate(BORDER_DIST, HEIGHT - 70);
         createGroupErrMsg.setTextFill(Color.ORANGE);
-        createGroupErrMsg.setFont(Font.font(9));
+        createGroupErrMsg.setFont(Font.font(8));
     }
 
     private void initAddMember() {
@@ -276,7 +326,7 @@ class ChatsMenu {
         groupName = new TextField();
         groupName.setPromptText("GROUP NAME");
         groupName.setPrefWidth(chatsColumn.getPrefWidth());
-        groupName.relocate(0, HEIGHT - 25);
+        groupName.relocate(0, HEIGHT - 27);
         groupName.setFocusTraversable(false);
         groupName.setFont(Font.font(10));
         groupName.setStyle(TEXTFIELD_COLOR);
