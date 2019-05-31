@@ -14,6 +14,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
+import sun.security.x509.RFC822Name;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -25,6 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 class ChatsMenu {
+    private static final int REFRESH_TIME = 50;
+
     private Client client;
     private Chat chat;
 
@@ -122,7 +125,7 @@ class ChatsMenu {
             @Override
             public void handle(long now) {
                 if (client.getUser() != null)
-                    if (now - last > 100) {
+                    if (now - last > REFRESH_TIME) {
                         List<Chat> chats = client.getUser().getChats();
                         for (Chat chat : chats) {
                             if (!client.isShowed(chat)) {
@@ -279,7 +282,7 @@ class ChatsMenu {
 
             @Override
             public void handle(long now) {
-                if (now - last > 100) {
+                if (now - last > REFRESH_TIME) {
                     messages.getChildren().remove(0, messages.getChildren().size());
                     if (chat != null) {
                         if (!root.getChildren().contains(messageGroup))
@@ -345,14 +348,19 @@ class ChatsMenu {
 
     private void initCreateGroupErrMsg() {
         createGroupErrMsg = new Label("");
-        createGroupErrMsg.relocate(BORDER_DIST, HEIGHT - 70);
+        createGroupErrMsg.relocate(BORDER_DIST, HEIGHT - 98);
         createGroupErrMsg.setTextFill(Color.ORANGE);
         createGroupErrMsg.setFont(Font.font(8));
     }
 
     private void initAddMember() {
         addMember = new Button("ADD MEMBER");
-        addMember.relocate(BORDER_DIST, HEIGHT - 105);
+        addMember.relocate(0, HEIGHT - 85);
+        addMember.setPrefWidth(ChatsMenu.this.chatsColumn.getPrefWidth());
+        addMember.setStyle("-fx-background-color: #df5b5e;");
+        addMember.setShape(new Rectangle(1, 1));
+        addMember.setTextFill(Color.valueOf(TEXT_COLOR));
+        addMember.setFont(Font.font(11));
     }
 
     private void initGroupName() {
@@ -372,7 +380,7 @@ class ChatsMenu {
 
             @Override
             public void handle(long now) {
-                if (now - last > 100) {
+                if (now - last > REFRESH_TIME) {
                     if (selectedChat != null
                             && Chat.isThisTheMakerOf(client.getUser(), selectedChat.getText())) {
                         if (!root.getChildren().contains(addMember)) {

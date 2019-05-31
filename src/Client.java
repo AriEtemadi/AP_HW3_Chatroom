@@ -60,7 +60,7 @@ public class Client extends Application {
             };
             reader.start();
 
-            Thread.sleep(500);
+            Thread.sleep(200);
 
             user = User.getOrMake(username);
             User.updateTo(writer);
