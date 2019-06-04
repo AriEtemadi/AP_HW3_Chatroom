@@ -21,7 +21,7 @@ class Chat {
     private List<String> messages = new ArrayList<>();
     private User maker;
 
-    private Chat() {
+    Chat() {
     }
 
     Chat(String name, User maker, List<User> users) {
@@ -33,40 +33,8 @@ class Chat {
         chats.add(this);
     }
 
-    private static boolean hasThisName(String name) {
-        for (Chat chat : chats)
-            if (chat.name != null && chat.name.equals(name))
-                return true;
-        return false;
-    }
-
-    private static void updateIdCount(int id) {
-        idCount = Math.max(id + 1, idCount + 1);
-    }
-
-    private static Chat chatMaker(String path) {
-        try {
-            String json = new String(Files.readAllBytes(Paths.get(path)), StandardCharsets.UTF_8);
-            YaGson yaGson = new YaGson();
-            return yaGson.fromJson(json, Chat.class);
-        } catch (IOException e) {
-            View.printError(e);
-        }
-        //  shouldn't reach here
-        return null;
-    }
-
-    static boolean isGroupNameValid(String name) {
-        if (name == null || name.equals(""))
-            return false;
-        return !hasThisName(name);
-    }
-
-    static Chat getChatByName(String name) {
-        for (Chat c : chats)
-            if (c.name != null && c.name.equals(name))
-                return c;
-        return null;
+    void addMessage(String message) {
+        messages.add(message);
     }
 
     static void updateFrom(String json) {
@@ -92,6 +60,13 @@ class Chat {
             chatLineWriter.writeLine(yaGson.toJson(chat));
     }
 
+    void copyFrom(Chat chat) {
+        this.messages = chat.messages;
+        this.name = chat.name;
+        this.id = chat.id;
+        this.users = chat.users;
+    }
+
     static void showChats() {
         System.out.println(chats.size() + " chats:");
         for (Chat chat : chats) {
@@ -113,38 +88,38 @@ class Chat {
             }
     }
 
-    static void initializeChats() {
-        File path = new File("src/chats");
-        File[] files = path.listFiles();
-        if (files == null)
+    void addUser(User user) {
+        if (user == null)
             return;
-        for (File file : files)
-            if (file.isFile()) {
-                Chat chat = chatMaker(file.getPath());
-                chats.add(chat);
-                if (chat != null)
-                    updateIdCount(chat.id);
-            }
+        if (!hasThis(user))
+            users.add(user);
     }
 
-    static void saveAll() {
-        chats.forEach(Chat::save);
+    void addUser(List<User> users) {
+        if (users == null)
+            return;
+        users.forEach(this::addUser);
     }
 
-    static List<Chat> getChats() {
-        return chats;
+    private void setID() {
+        this.id = idCount++;
     }
 
-    static boolean isThisTheMakerOf(User user, String chatName) {
-        if (user == null || chatName == null)
-            return false;
-        Chat chat = getChatByName(chatName);
-        if (chat == null)
-            return false;
-        return chat.getMaker().getId() == user.getId();
+    boolean hasThis(User user) {
+        for (User u : users)
+            if (u.getId() == user.getId())
+                return true;
+        return false;
     }
 
-    private void save() {
+    void show() {
+        System.out.println("chat " + name + ": ");
+        for (int i = Math.max(0, messages.size() - 10); i < messages.size(); i++) {
+            System.out.println(messages.get(i));
+        }
+    }
+
+    void save() {
         String path = "src/chats/";
         path += Integer.toString(id).toLowerCase().replaceAll("\\s+", "");
         path += ".json";
@@ -164,39 +139,41 @@ class Chat {
         }
     }
 
-    private void copyFrom(Chat chat) {
-        this.messages = chat.messages;
-        this.name = chat.name;
-        this.id = chat.id;
-        this.users = chat.users;
-    }
-
-    private void addUser(User user) {
-        if (user == null)
+    static void initializeChats() {
+        File path = new File("src/chats");
+        File[] files = path.listFiles();
+        if (files == null)
             return;
-        if (!hasThis(user))
-            users.add(user);
+        for (File file : files)
+            if (file.isFile()) {
+                Chat chat = chatMaker(file.getPath());
+                chats.add(chat);
+                updateIdCount(chat.id);
+            }
     }
 
-    private void setID() {
-        this.id = idCount++;
+    private static void updateIdCount(int id) {
+        idCount = Math.max(id + 1, idCount + 1);
     }
 
-    void addMessage(String message) {
-        messages.add(message);
+    private static Chat chatMaker(String path) {
+        try {
+            String json = new String(Files.readAllBytes(Paths.get(path)), StandardCharsets.UTF_8);
+            YaGson yaGson = new YaGson();
+            return yaGson.fromJson(json, Chat.class);
+        } catch (IOException e) {
+            View.printError(e);
+        }
+        //  shouldn't reach here
+        return null;
     }
 
-    void addUser(List<User> users) {
-        if (users == null)
-            return;
-        users.forEach(this::addUser);
+    static void saveAll() {
+        chats.forEach(Chat::save);
     }
 
-    boolean hasThis(User user) {
-        for (User u : users)
-            if (u.getId() == user.getId())
-                return true;
-        return false;
+    static List<Chat> getChats() {
+        return chats;
     }
 
     String getName() {
@@ -215,6 +192,11 @@ class Chat {
         return id;
     }
 
+    static void addChat(Chat chat) {
+        if (chat != null)
+            chats.add(chat);
+    }
+
     String getNameFor(User user) {
         if (users.size() > 2)
             return name;
@@ -224,7 +206,39 @@ class Chat {
         return null;
     }
 
+    static boolean hasThisName(String name) {
+        for (Chat chat : chats)
+            if (chat.name != null && chat.name.equals(name))
+                return true;
+        return false;
+    }
+
+    static boolean isGroupNameValid(String name) {
+        if (name == null || name.equals(""))
+            return false;
+        if (hasThisName(name))
+            return false;
+        return true;
+    }
+
+    static Chat getChatByName(String name) {
+        for (Chat c : chats)
+            if (c.name != null && c.name.equals(name))
+                return c;
+        return null;
+    }
+
     User getMaker() {
         return maker;
     }
+
+    static boolean isThisTheMakerOf(User user, String chatName) {
+        if (user == null || chatName == null)
+            return false;
+        Chat chat = getChatByName(chatName);
+        if (chat == null)
+            return false;
+        return chat.getMaker().getId() == user.getId();
+    }
+
 }

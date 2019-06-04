@@ -14,7 +14,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
-import sun.security.x509.RFC822Name;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -26,24 +25,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 class ChatsMenu {
-    private static final int REFRESH_TIME = 50;
-
     private Client client;
     private Chat chat;
 
-    private final int MAX_MSG_NUM = 20;
     private final int WIDTH = 350;
     private final int HEIGHT = 400;
     private final int BORDER_DIST = 5;
-    private final String BACKGROUND_COLOR = "18191D";
+    private final String MESSAGE_COLOR = "-fx-background-color: #3D444B;";
     private final String CHATS_COLOR = "-fx-background-color: #282E33;";
     private final String SELECTED_CHAT_COLOR = "-fx-background-color: #009687;";
     private final String RIGHT_CLICKED_COLOR = "-fx-background-color: #65AADD;";
     private final String TEXT_COLOR = "FFFFFF";
     private final String TEXTFIELD_COLOR = "-fx-background-color: #3D444B; -fx-text-fill: #ffffff";
     private final String HOVERED_BUTTON_STYLE = "-fx-background-color: #004D46";
-    private final String[] emojiStrings = {"\uD83D\uDE02", "\uD83D\uDE0A", "\uD83D\uDE18",
-            "\uD83D\uDE0D", "\uD83D\uDE01", "\uD83D\uDE21", "\uD83D\uDE1C", "\uD83D\uDE31", "\uD83D\uDE2D"};
+    private int messageCount = 0;
 
     private Scene scene;
     private Group root;
@@ -65,6 +60,7 @@ class ChatsMenu {
     private Button createGroup;
 
     private Button selectedChat;
+    private Button repliedMessage;
     private List<Button> rightClickedButtons = new ArrayList<>();
 
     ChatsMenu(Client client) {
@@ -73,7 +69,7 @@ class ChatsMenu {
 
     void run() {
         root = new Group();
-        scene = new Scene(root, WIDTH, HEIGHT, Color.valueOf(BACKGROUND_COLOR));
+        scene = new Scene(root, WIDTH, HEIGHT, Color.valueOf("18191D"));
         View.getInstance().setScene(scene);
 
         initChatGroup();
@@ -125,7 +121,7 @@ class ChatsMenu {
             @Override
             public void handle(long now) {
                 if (client.getUser() != null)
-                    if (now - last > REFRESH_TIME) {
+                    if (now - last > 100) {
                         List<Chat> chats = client.getUser().getChats();
                         for (Chat chat : chats) {
                             if (!client.isShowed(chat)) {
@@ -144,6 +140,7 @@ class ChatsMenu {
                                     if (selectedChat != null)
                                         selectedChat.setStyle(CHATS_COLOR);
                                     ChatsMenu.this.chat = chat;
+                                    redrawMessages();
                                     button.setStyle(SELECTED_CHAT_COLOR);
                                     selectedChat = button;
                                 });
@@ -223,6 +220,8 @@ class ChatsMenu {
     private void initEmojis() {
         emojis = new HBox();
         emojis.relocate(0, HEIGHT - 60);
+        String[] emojiStrings = {"\uD83D\uDE02", "\uD83D\uDE0A", "\uD83D\uDE18", "\uD83D\uDE0D", "\uD83D\uDE01"
+                , "\uD83D\uDE21", "\uD83D\uDE1C", "\uD83D\uDE31", "\uD83D\uDE2D"};
         for (String s : emojiStrings) {
             Button button = new Button(s);
             button.setFont(Font.font(10));
@@ -258,6 +257,13 @@ class ChatsMenu {
             msg = getImageAsString(input.getText().trim().split("\\s+")[1]);
         else
             msg = input.getText();
+        if (msg.length() < 100) {
+            if (repliedMessage != null) {
+                msg = "replied to " + repliedMessage.getText() + ": " + msg;
+                repliedMessage.setStyle(MESSAGE_COLOR);
+                repliedMessage = null;
+            }
+        }
         chat.addMessage(msg);
         client.updateChatsForServer();
         input.setText("");
@@ -282,15 +288,15 @@ class ChatsMenu {
 
             @Override
             public void handle(long now) {
-                if (now - last > REFRESH_TIME) {
-                    messages.getChildren().remove(0, messages.getChildren().size());
+                if (now - last > 100) {
                     if (chat != null) {
                         if (!root.getChildren().contains(messageGroup))
                             root.getChildren().add(messageGroup);
-                        for (int i = Math.max(chat.getMessages().size() - MAX_MSG_NUM, 0);
+                        for (int i = messageCount;
                              i < chat.getMessages().size(); i++) {
                             showMessage(chat.getMessages().get(i));
                         }
+                        messageCount = chat.getMessages().size();
                         messages.relocate(0, 350 - messages.getHeight());
                     }
                     last = now;
@@ -298,6 +304,11 @@ class ChatsMenu {
             }
         };
         showMessages.start();
+    }
+
+    private void redrawMessages() {
+        messageCount = 0;
+        messages.getChildren().remove(0, messages.getChildren().size());
     }
 
     private void showMessage(String message) {
@@ -317,8 +328,17 @@ class ChatsMenu {
                 View.printError(e);
             }
         } else {
-            Label msg = new Label(message);
+            Button msg = new Button(message);
+            msg.setStyle(MESSAGE_COLOR);
+            msg.setOnAction(event -> {
+                if (repliedMessage != null) {
+                    repliedMessage.setStyle(MESSAGE_COLOR);
+                }
+                msg.setStyle(RIGHT_CLICKED_COLOR);
+                repliedMessage = msg;
+            });
             msg.setTextFill(Color.valueOf(TEXT_COLOR));
+            msg.setOnMouseClicked(event -> msg.setStyle("-fx-background-color: #ffffff;"));
             messages.getChildren().add(msg);
         }
     }
@@ -348,19 +368,14 @@ class ChatsMenu {
 
     private void initCreateGroupErrMsg() {
         createGroupErrMsg = new Label("");
-        createGroupErrMsg.relocate(BORDER_DIST, HEIGHT - 98);
+        createGroupErrMsg.relocate(BORDER_DIST, HEIGHT - 70);
         createGroupErrMsg.setTextFill(Color.ORANGE);
         createGroupErrMsg.setFont(Font.font(8));
     }
 
     private void initAddMember() {
         addMember = new Button("ADD MEMBER");
-        addMember.relocate(0, HEIGHT - 85);
-        addMember.setPrefWidth(ChatsMenu.this.chatsColumn.getPrefWidth());
-        addMember.setStyle("-fx-background-color: #df5b5e;");
-        addMember.setShape(new Rectangle(1, 1));
-        addMember.setTextFill(Color.valueOf(TEXT_COLOR));
-        addMember.setFont(Font.font(11));
+        addMember.relocate(BORDER_DIST, HEIGHT - 105);
     }
 
     private void initGroupName() {
@@ -380,7 +395,7 @@ class ChatsMenu {
 
             @Override
             public void handle(long now) {
-                if (now - last > REFRESH_TIME) {
+                if (now - last > 100) {
                     if (selectedChat != null
                             && Chat.isThisTheMakerOf(client.getUser(), selectedChat.getText())) {
                         if (!root.getChildren().contains(addMember)) {
